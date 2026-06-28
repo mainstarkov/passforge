@@ -81,6 +81,45 @@ def analyze_strength(password: str) -> dict:
     entropy = length * math.log2(charset_size) if charset_size > 0 else 0
     combinations = charset_size ** length if charset_size > 0 else 0
 
+    # Target entropy for strong password (80 bits)
+    target_entropy = 80
+    missing_symbols = 0
+    suggested_password = ""
+    
+    if entropy < target_entropy and charset_size > 0:
+        # Calculate how many more characters needed
+        min_length_needed = math.ceil(target_entropy / math.log2(charset_size))
+        missing_symbols = max(0, min_length_needed - length)
+        
+        # Generate a suggested password if current is weak
+        if missing_symbols > 0 or not all([has_lower, has_upper, has_digit, has_symbol]):
+            suggested_charset = ""
+            if not has_lower:
+                suggested_charset += string.ascii_lowercase
+            if not has_upper:
+                suggested_charset += string.ascii_uppercase
+            if not has_digit:
+                suggested_charset += string.digits
+            if not has_symbol:
+                suggested_charset += "!@#$%^&*()-_=+[]{}|;:,.<>?"
+            
+            # Build suggested password: original + additional chars
+            base = password
+            additional_needed = max(missing_symbols, 4)  # At least 4 more if adding types
+            
+            # Add missing character types first
+            if suggested_charset:
+                for i, ch in enumerate(suggested_charset[:4]):
+                    base += ch
+            
+            # Then add random chars to reach target length
+            remaining = max(0, min_length_needed - len(base))
+            if remaining > 0:
+                full_charset = string.ascii_letters + string.digits + "!@#$%^&*()-_=+[]{}|;:,.<>?"
+                base += "".join(full_charset[b % len(full_charset)] for b in os.urandom(remaining))
+            
+            suggested_password = base
+
     if entropy >= 80:
         grade, color = "EXCELLENT", C.GREEN
     elif entropy >= 60:
@@ -107,6 +146,8 @@ def analyze_strength(password: str) -> dict:
         "has_upper": has_upper,
         "has_digit": has_digit,
         "has_symbol": has_symbol,
+        "missing_symbols": missing_symbols,
+        "suggested_password": suggested_password,
     }
 
 
@@ -172,6 +213,19 @@ def display_password(password: str, analysis: dict):
     if a["has_symbol"]:
         types.append(f"{C.GREEN}!@#{C.RESET}")
     print("  ".join(types))
+    
+    # Show how many more symbols needed and suggest improved password
+    if a["missing_symbols"] > 0 or a["suggested_password"]:
+        print()
+        if a["missing_symbols"] > 0:
+            print(f"  {C.YELLOW}{'Need':<18}{C.RESET} {C.RED}+{a['missing_symbols']} more characters{C.RESET} for strong password (80+ bits)")
+        if a["suggested_password"]:
+            suggested_analysis = analyze_strength(a["suggested_password"])
+            print(f"\n  {C.BOLD}{C.GREEN}💡 Suggested stronger password:{C.RESET}")
+            print(f"  ╔{'═' * (len(a['suggested_password']) + 4)}╗")
+            print(f"  ║  {C.BOLD}{C.GREEN}{a['suggested_password']}{C.RESET}  ║")
+            print(f"  ╚{'═' * (len(a['suggested_password']) + 4)}╝")
+            print(f"  {C.GREEN}  → Entropy: {suggested_analysis['entropy']} bits ({suggested_analysis['grade']}){C.RESET}")
     print()
 
 
