@@ -8,31 +8,18 @@ import string
 import sys
 
 
-# ── Terminal colors ──────────────────────────────────────────────────
+# no colorama dependency — just the handful of codes we actually use
+RED = "\033[91m"
+GREEN = "\033[92m"
+YELLOW = "\033[93m"
+CYAN = "\033[96m"
+WHITE = "\033[97m"
+GRAY = "\033[90m"
+BOLD = "\033[1m"
+DIM = "\033[2m"
+RESET = "\033[0m"
 
-class C:
-    RED     = "\033[91m"
-    GREEN   = "\033[92m"
-    YELLOW  = "\033[93m"
-    CYAN    = "\033[96m"
-    WHITE   = "\033[97m"
-    GRAY    = "\033[90m"
-    BOLD    = "\033[1m"
-    DIM     = "\033[2m"
-    RESET   = "\033[0m"
-
-
-BANNER = f"""
-{C.CYAN}{C.BOLD}  ██████╗  █████╗ ███████╗███████╗███████╗ ██████╗ ██████╗  ██████╗ ███████╗
-  ██╔══██╗██╔══██╗██╔════╝██╔════╝██╔════╝██╔═══██╗██╔══██╗██╔════╝ ██╔════╝
-  ██████╔╝███████║███████╗███████╗█████╗  ██║   ██║██████╔╝██║  ███╗█████╗
-  ██╔═══╝ ██╔══██║╚════██║╚════██║██╔══╝  ██║   ██║██╔══██╗██║   ██║██╔══╝
-  ██║     ██║  ██║███████║███████║██║     ╚██████╔╝██║  ██║╚██████╔╝███████╗
-  ╚═╝     ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝      ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚══════╝{C.RESET}
-{C.GRAY}  ────────────────────────────────────────────────────────────────────{C.RESET}
-{C.DIM}  Secure Password Generator v1.0                      {C.GRAY}by mainstarkov{C.RESET}
-{C.GRAY}  ────────────────────────────────────────────────────────────────────{C.RESET}
-"""
+HEADER = f"{BOLD}{CYAN}PassForge{RESET}{DIM} — password generator & strength checker{RESET}\n"
 
 
 # ── Password generation ─────────────────────────────────────────────
@@ -53,7 +40,7 @@ def generate_password(length: int, upper: bool, lower: bool, digits: bool,
         charset = charset.replace(ch, "")
 
     if not charset:
-        print(f"{C.RED}  ✗ Error: empty charset. Enable at least one character type.{C.RESET}")
+        print(f"{RED}  ✗ Error: empty charset. Enable at least one character type.{RESET}")
         sys.exit(1)
 
     return "".join(charset[b % len(charset)] for b in os.urandom(length))
@@ -121,18 +108,18 @@ def analyze_strength(password: str) -> dict:
             suggested_password = base
 
     if entropy >= 80:
-        grade, color = "EXCELLENT", C.GREEN
+        grade, color = "EXCELLENT", GREEN
     elif entropy >= 60:
-        grade, color = "STRONG", C.GREEN
+        grade, color = "STRONG", GREEN
     elif entropy >= 40:
-        grade, color = "MODERATE", C.YELLOW
+        grade, color = "MODERATE", YELLOW
     elif entropy >= 28:
-        grade, color = "WEAK", C.RED
+        grade, color = "WEAK", RED
     else:
-        grade, color = "VERY WEAK", C.RED
+        grade, color = "VERY WEAK", RED
 
     bar_len = min(int(entropy / 4), 20)
-    bar = f"{color}{'█' * bar_len}{C.GRAY}{'░' * (20 - bar_len)}{C.RESET}"
+    bar = f"{color}{'█' * bar_len}{GRAY}{'░' * (20 - bar_len)}{RESET}"
 
     return {
         "length": length,
@@ -188,44 +175,44 @@ def crack_time(combinations: int) -> str:
 def display_password(password: str, analysis: dict):
     a = analysis
 
-    print(f"\n  {C.BOLD}{C.WHITE}Generated Password:{C.RESET}")
+    print(f"\n  {BOLD}{WHITE}Generated Password:{RESET}")
     print(f"  ╔{'═' * (len(password) + 4)}╗")
-    print(f"  ║  {C.BOLD}{C.CYAN}{password}{C.RESET}  ║")
+    print(f"  ║  {BOLD}{CYAN}{password}{RESET}  ║")
     print(f"  ╚{'═' * (len(password) + 4)}╝")
 
-    print(f"\n  {C.BOLD}Strength Analysis:{C.RESET}")
-    print(f"  {a['bar']}  {a['color']}{C.BOLD}{a['grade']}{C.RESET}")
+    print(f"\n  {BOLD}Strength Analysis:{RESET}")
+    print(f"  {a['bar']}  {a['color']}{BOLD}{a['grade']}{RESET}")
     print()
-    print(f"  {C.YELLOW}{'Length':<18}{C.RESET} {a['length']} characters")
-    print(f"  {C.YELLOW}{'Entropy':<18}{C.RESET} {a['entropy']} bits")
-    print(f"  {C.YELLOW}{'Charset size':<18}{C.RESET} {a['charset_size']} characters")
-    print(f"  {C.YELLOW}{'Combinations':<18}{C.RESET} {format_combinations(a['combinations'])}")
-    print(f"  {C.YELLOW}{'Crack time':<18}{C.RESET} {crack_time(a['combinations'])} (10B guesses/s)")
+    print(f"  {YELLOW}{'Length':<18}{RESET} {a['length']} characters")
+    print(f"  {YELLOW}{'Entropy':<18}{RESET} {a['entropy']} bits")
+    print(f"  {YELLOW}{'Charset size':<18}{RESET} {a['charset_size']} characters")
+    print(f"  {YELLOW}{'Combinations':<18}{RESET} {format_combinations(a['combinations'])}")
+    print(f"  {YELLOW}{'Crack time':<18}{RESET} {crack_time(a['combinations'])} (10B guesses/s)")
     print()
-    print(f"  {C.YELLOW}{'Character types':<18}{C.RESET} ", end="")
+    print(f"  {YELLOW}{'Character types':<18}{RESET} ", end="")
     types = []
     if a["has_lower"]:
-        types.append(f"{C.GREEN}abc{C.RESET}")
+        types.append(f"{GREEN}abc{RESET}")
     if a["has_upper"]:
-        types.append(f"{C.GREEN}ABC{C.RESET}")
+        types.append(f"{GREEN}ABC{RESET}")
     if a["has_digit"]:
-        types.append(f"{C.GREEN}123{C.RESET}")
+        types.append(f"{GREEN}123{RESET}")
     if a["has_symbol"]:
-        types.append(f"{C.GREEN}!@#{C.RESET}")
+        types.append(f"{GREEN}!@#{RESET}")
     print("  ".join(types))
     
     # Show how many more symbols needed and suggest improved password
     if a["missing_symbols"] > 0 or a["suggested_password"]:
         print()
         if a["missing_symbols"] > 0:
-            print(f"  {C.YELLOW}{'Need':<18}{C.RESET} {C.RED}+{a['missing_symbols']} more characters{C.RESET} for strong password (80+ bits)")
+            print(f"  {YELLOW}{'Need':<18}{RESET} {RED}+{a['missing_symbols']} more characters{RESET} for strong password (80+ bits)")
         if a["suggested_password"]:
             suggested_analysis = analyze_strength(a["suggested_password"])
-            print(f"\n  {C.BOLD}{C.GREEN}💡 Suggested stronger password:{C.RESET}")
+            print(f"\n  {BOLD}{GREEN}💡 Suggested stronger password:{RESET}")
             print(f"  ╔{'═' * (len(a['suggested_password']) + 4)}╗")
-            print(f"  ║  {C.BOLD}{C.GREEN}{a['suggested_password']}{C.RESET}  ║")
+            print(f"  ║  {BOLD}{GREEN}{a['suggested_password']}{RESET}  ║")
             print(f"  ╚{'═' * (len(a['suggested_password']) + 4)}╝")
-            print(f"  {C.GREEN}  → Entropy: {suggested_analysis['entropy']} bits ({suggested_analysis['grade']}){C.RESET}")
+            print(f"  {GREEN}  → Entropy: {suggested_analysis['entropy']} bits ({suggested_analysis['grade']}){RESET}")
     print()
 
 
@@ -243,7 +230,7 @@ def main():
     parser.add_argument("--analyze", metavar="PWD", help="analyze strength of existing password")
 
     args = parser.parse_args()
-    print(BANNER)
+    print(HEADER)
 
     if args.analyze:
         analysis = analyze_strength(args.analyze)
@@ -262,7 +249,7 @@ def main():
         analysis = analyze_strength(pw)
         display_password(pw, analysis)
         if i < args.count - 1:
-            print(f"  {C.GRAY}{'─' * 50}{C.RESET}")
+            print(f"  {GRAY}{'─' * 50}{RESET}")
 
 
 if __name__ == "__main__":
